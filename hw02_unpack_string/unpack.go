@@ -14,38 +14,43 @@ const EscSmb = '\\'
 func Unpack(input string) (string, error) {
 	// Place your code here.
 	sb := strings.Builder{}
-	rr := []rune(input)
 	var r2Rpt rune
+	var prevR rune
 
-	for i := 0; i < len(rr); i++ {
+	for _, r := range input {
 		switch {
-		case unicode.IsDigit(rr[i]):
+		case unicode.IsDigit(r):
 			switch {
 			case r2Rpt != 0:
-				cnt, _ := strconv.Atoi(string(rr[i]))
+				cnt, err := strconv.Atoi(string(r))
+				if err != nil {
+					return "", err
+				}
 				sb.WriteString(strings.Repeat(string(r2Rpt), cnt))
 				r2Rpt = 0
-			case i > 0 && rr[i-1] == EscSmb:
-				r2Rpt = rr[i]
+			case prevR == EscSmb:
+				r2Rpt = r
 			default:
 				return "", ErrInvalidString
 			}
-		case rr[i] == EscSmb:
+		case r == EscSmb:
 			if r2Rpt != 0 {
 				sb.WriteRune(r2Rpt)
 				r2Rpt = 0
-			} else if i > 0 && rr[i-1] == EscSmb {
-				r2Rpt = rr[i]
+			} else if prevR == EscSmb {
+				r2Rpt = r
 			}
 		default:
 			if r2Rpt != 0 {
 				sb.WriteRune(r2Rpt)
-			} else if i > 0 && rr[i-1] == EscSmb {
+			} else if prevR == EscSmb {
 				return "", ErrInvalidString
 			}
-			r2Rpt = rr[i]
+			r2Rpt = r
 		}
+		prevR = r
 	}
+
 	if r2Rpt != 0 {
 		sb.WriteRune(r2Rpt)
 	}
