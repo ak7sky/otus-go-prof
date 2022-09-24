@@ -45,11 +45,13 @@ func Top10(input string) []string {
 		return wfSlc[i].word < wfSlc[j].word
 	})
 
-	wfSlc = wfSlc[:10]
-	top10 := make([]string, 0, len(wfSlc))
+	if len(wfSlc) > 10 {
+		wfSlc = wfSlc[:10]
+	}
+	top := make([]string, 0, len(wfSlc))
 	for _, wf := range wfSlc {
-		top10 = append(top10, wf.word)
+		top = append(top, wf.word)
 	}
 
-	return top10
+	return top
 }
