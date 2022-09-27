@@ -6,10 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Change to true if needed.
-var taskWithAsteriskIsCompleted = false
-
-var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
+var cyrillicText = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
 	ступеньки собственным затылком:  бум-бум-бум.  Другого  способа
 	сходить  с  лестницы  он  пока  не  знает.  Иногда ему, правда,
@@ -43,14 +40,37 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
-func TestTop10(t *testing.T) {
-	t.Run("no words in empty string", func(t *testing.T) {
-		require.Len(t, Top10(""), 0)
-	})
+var asciiText = `Go is expressive, clean, and efficient. Go compiles quickly...`
 
-	t.Run("positive test", func(t *testing.T) {
-		if taskWithAsteriskIsCompleted {
-			expected := []string{
+func TestTop10(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty",
+			input:    "",
+			expected: []string{},
+		},
+		{
+			name:  "ascii < 10",
+			input: asciiText,
+			expected: []string{
+				"go",         // 2
+				"and",        // 1
+				"clean",      // 1
+				"compiles",   // 1
+				"efficient",  // 1
+				"expressive", // 1
+				"is",         // 1
+				"quickly",    // 1
+			},
+		},
+		{
+			name:  "cyrillic > 10",
+			input: cyrillicText,
+			expected: []string{
 				"а",         // 8
 				"он",        // 8
 				"и",         // 6
@@ -61,22 +81,15 @@ func TestTop10(t *testing.T) {
 				"если",      // 4
 				"кристофер", // 4
 				"не",        // 4
-			}
-			require.Equal(t, expected, Top10(text))
-		} else {
-			expected := []string{
-				"он",        // 8
-				"а",         // 6
-				"и",         // 6
-				"ты",        // 5
-				"что",       // 5
-				"-",         // 4
-				"Кристофер", // 4
-				"если",      // 4
-				"не",        // 4
-				"то",        // 4
-			}
-			require.Equal(t, expected, Top10(text))
-		}
-	})
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			actual := Top10(tc.input)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
 }
