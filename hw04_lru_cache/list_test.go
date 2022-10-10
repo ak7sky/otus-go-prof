@@ -7,7 +7,7 @@ import (
 )
 
 func TestList(t *testing.T) {
-	t.Run("empty list", func(t *testing.T) {
+	t.Run("new list creation", func(t *testing.T) {
 		l := NewList()
 
 		require.Equal(t, 0, l.Len())
@@ -15,37 +15,72 @@ func TestList(t *testing.T) {
 		require.Nil(t, l.Back())
 	})
 
-	t.Run("complex", func(t *testing.T) {
+	t.Run("list operations", func(t *testing.T) {
+		// test PushFront() on empty list
 		l := NewList()
+		l.PushFront(10)
+		require.Equal(t, 1, l.Len())
+		require.Equal(t, []interface{}{10}, getListVals(l))
 
-		l.PushFront(10) // [10]
-		l.PushBack(20)  // [10, 20]
-		l.PushBack(30)  // [10, 20, 30]
-		require.Equal(t, 3, l.Len())
+		// test PushBack() on empty list
+		l = NewList()
+		l.PushBack(10)
+		require.Equal(t, 1, l.Len())
+		require.Equal(t, []interface{}{10}, getListVals(l))
 
-		middle := l.Front().Next // 20
-		l.Remove(middle)         // [10, 30]
-		require.Equal(t, 2, l.Len())
-
-		for i, v := range [...]int{40, 50, 60, 70, 80} {
+		// test PushFront(), PushBack() on not empty list
+		for i, v := range [...]int{20, 30, 40, 50, 60, 70} {
 			if i%2 == 0 {
 				l.PushFront(v)
 			} else {
 				l.PushBack(v)
 			}
-		} // [80, 60, 40, 10, 30, 50, 70]
-
+		}
 		require.Equal(t, 7, l.Len())
-		require.Equal(t, 80, l.Front().Value)
+		require.Equal(t, []interface{}{60, 40, 20, 10, 30, 50, 70}, getListVals(l))
+
+		// test Front(), Back()
+		require.Equal(t, 60, l.Front().Value)
 		require.Equal(t, 70, l.Back().Value)
 
-		l.MoveToFront(l.Front()) // [80, 60, 40, 10, 30, 50, 70]
-		l.MoveToFront(l.Back())  // [70, 80, 60, 40, 10, 30, 50]
+		// test Remove() front item
+		f := l.Front()
+		l.Remove(f)
+		require.Equal(t, 6, l.Len())
+		require.Equal(t, []interface{}{40, 20, 10, 30, 50, 70}, getListVals(l))
 
-		elems := make([]int, 0, l.Len())
-		for i := l.Front(); i != nil; i = i.Next {
-			elems = append(elems, i.Value.(int))
-		}
-		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
+		// test Remove() back item
+		b := l.Back()
+		l.Remove(b)
+		require.Equal(t, 5, l.Len())
+		require.Equal(t, []interface{}{40, 20, 10, 30, 50}, getListVals(l))
+
+		// test Remove() middle item
+		m := l.Front().Next.Next
+		l.Remove(m)
+		require.Equal(t, 4, l.Len())
+		require.Equal(t, []interface{}{40, 20, 30, 50}, getListVals(l))
+
+		// test MoveToFront front item
+		l.MoveToFront(l.Front())
+		require.Equal(t, []interface{}{40, 20, 30, 50}, getListVals(l))
+
+		// test MoveToFront back item
+		l.MoveToFront(l.Back())
+		require.Equal(t, []interface{}{50, 40, 20, 30}, getListVals(l))
+
+		// test MoveToFront middle item
+		l.MoveToFront(l.Front().Next)
+		require.Equal(t, []interface{}{40, 50, 20, 30}, getListVals(l))
 	})
+}
+
+func getListVals(l List) []interface{} {
+	var vals []interface{}
+	li := l.Front()
+	for li != nil {
+		vals = append(vals, li.Value)
+		li = li.Next
+	}
+	return vals
 }
