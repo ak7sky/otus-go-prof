@@ -10,7 +10,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	t.Run("empty cache", func(t *testing.T) {
+	t.Run("empty cache creation", func(t *testing.T) {
 		c := NewCache(10)
 
 		_, ok := c.Get("aaa")
@@ -20,7 +20,7 @@ func TestCache(t *testing.T) {
 		require.False(t, ok)
 	})
 
-	t.Run("simple", func(t *testing.T) {
+	t.Run("read/write cache operations", func(t *testing.T) {
 		c := NewCache(5)
 
 		wasInCache := c.Set("aaa", 100)
@@ -49,14 +49,52 @@ func TestCache(t *testing.T) {
 		require.Nil(t, val)
 	})
 
+	t.Run("removing 'first-in' item", func(t *testing.T) {
+		c := NewCache(3)
+		c.Set("aaa", 100)
+		c.Set("bbb", 200)
+		c.Set("ccc", 300)
+		c.Set("ddd", 400)
+
+		val, ok := c.Get("aaa")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+	})
+
+	t.Run("removing item of oldest action", func(t *testing.T) {
+		c := NewCache(3)
+		c.Set("aaa", 100)
+		c.Set("bbb", 200)
+		c.Set("ccc", 300)
+		c.Get("aaa")
+		c.Set("bbb", 2000)
+		c.Set("aaa", 1000)
+		c.Set("ddd", 4000)
+
+		val, ok := c.Get("ccc")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+	})
+
 	t.Run("purge logic", func(t *testing.T) {
 		// Write me
+		c := NewCache(2)
+		c.Set("aaa", 100)
+		c.Set("bbb", 200)
+
+		c.Clear()
+
+		val, ok := c.Get("aaa")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
+
+		val, ok = c.Get("bbb")
+		require.False(t, ok)
+		require.Equal(t, nil, val)
 	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
