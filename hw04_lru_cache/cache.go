@@ -32,14 +32,15 @@ func (cache *lruCache) Set(key Key, value interface{}) bool {
 		return exist
 	}
 
-	li := cache.queue.PushFront(cacheItem{key: key, value: value})
-	cache.items[key] = li
-	if cache.queue.Len() > cache.capacity {
+	if cache.queue.Len() >= cache.capacity {
 		back := cache.queue.Back()
 		backKey := back.Value.(cacheItem).key
 		cache.queue.Remove(back)
 		delete(cache.items, backKey)
 	}
+
+	li := cache.queue.PushFront(cacheItem{key: key, value: value})
+	cache.items[key] = li
 
 	return false
 }
