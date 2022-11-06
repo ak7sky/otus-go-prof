@@ -18,11 +18,47 @@ func Run(tasks []Task, n, m int) error {
 
 	wg := new(sync.WaitGroup)
 	var errCnt int32
+	tCh := make(chan Task, len(tasks))
+
+	for i := 0; i < n; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for t := range tCh {
+				if atomic.LoadInt32(&errCnt) >= int32(m) {
+					return
+				}
+				if err := t(); err != nil {
+					atomic.AddInt32(&errCnt, 1)
+				}
+			}
+		}()
+	}
+
+	for _, t := range tasks {
+		tCh <- t
+	}
+	close(tCh)
+
+	wg.Wait()
+	if errCnt >= int32(m) {
+		return ErrErrorsLimitExceeded
+	}
+	return nil
+}
+
+func RunV2(tasks []Task, n, m int) error {
+	if m <= 0 {
+		return ErrErrorsLimitExceeded
+	}
+
+	wg := new(sync.WaitGroup)
+	var errCnt int32
 	var tCnt int32
 
 	for i := 0; i < n; i++ {
 		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
+		go func() {
 			defer wg.Done()
 			for {
 				tIdx := atomic.AddInt32(&tCnt, 1) - 1
@@ -33,7 +69,7 @@ func Run(tasks []Task, n, m int) error {
 					atomic.AddInt32(&errCnt, 1)
 				}
 			}
-		}(wg)
+		}()
 	}
 
 	wg.Wait()

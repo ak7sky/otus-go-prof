@@ -76,6 +76,7 @@ func TestRun(t *testing.T) {
 			err = Run(tasks, workersCount, maxErrorsCount)
 		}(wg)
 
+		// TODO use another approach to check concurrency
 		require.Eventually(t, func() bool {
 			return atomic.LoadInt32(&runTasksCount) == int32(tasksCount)
 		}, sumTime/2, 10*time.Millisecond, "tasks were run sequentially?")
