@@ -48,39 +48,35 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("tasks without errors", func(t *testing.T) {
-		tasksCount := 50
+		tasksCount := 5
 		tasks := make([]Task, 0, tasksCount)
-
+		ttSyncCh := make(chan struct{})
 		var runTasksCount int32
-		var sumTime time.Duration
 
 		for i := 0; i < tasksCount; i++ {
-			taskSleep := time.Millisecond * time.Duration(rand.Intn(100))
-			sumTime += taskSleep
-
 			tasks = append(tasks, func() error {
-				time.Sleep(taskSleep)
 				atomic.AddInt32(&runTasksCount, 1)
+				<-ttSyncCh
 				return nil
 			})
 		}
 
-		workersCount := 5
+		workersCount := tasksCount
 		maxErrorsCount := 1
 
 		wg := new(sync.WaitGroup)
 		var err error
 		wg.Add(1)
-		go func(wg *sync.WaitGroup) {
+		go func() {
 			defer wg.Done()
 			err = Run(tasks, workersCount, maxErrorsCount)
-		}(wg)
+		}()
 
-		// TODO use another approach to check concurrency
 		require.Eventually(t, func() bool {
 			return atomic.LoadInt32(&runTasksCount) == int32(tasksCount)
-		}, sumTime/2, 10*time.Millisecond, "tasks were run sequentially?")
+		}, 500*time.Millisecond, 10*time.Millisecond, "tasks were run sequentially?")
 
+		close(ttSyncCh)
 		wg.Wait()
 		require.NoError(t, err)
 	})
