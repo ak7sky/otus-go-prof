@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -38,33 +39,45 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, runTasksCount, int32(workersCount+maxErrorsCount), "extra tasks were started")
 	})
 
-	t.Run("tasks without errors", func(t *testing.T) {
-		tasksCount := 50
-		tasks := make([]Task, 0, tasksCount)
+	t.Run("if M <= 0, than return error", func(t *testing.T) {
+		err := Run(make([]Task, 0, 10), 10, -1)
+		require.Truef(t, errors.Is(err, ErrErrorsLimitExceeded), "actual err - %v", err)
 
+		err = Run(make([]Task, 0, 10), 10, 0)
+		require.Truef(t, errors.Is(err, ErrErrorsLimitExceeded), "actual err - %v", err)
+	})
+
+	t.Run("tasks without errors", func(t *testing.T) {
+		tasksCount := 5
+		tasks := make([]Task, 0, tasksCount)
+		ttSyncCh := make(chan struct{})
 		var runTasksCount int32
-		var sumTime time.Duration
 
 		for i := 0; i < tasksCount; i++ {
-			taskSleep := time.Millisecond * time.Duration(rand.Intn(100))
-			sumTime += taskSleep
-
 			tasks = append(tasks, func() error {
-				time.Sleep(taskSleep)
 				atomic.AddInt32(&runTasksCount, 1)
+				<-ttSyncCh
 				return nil
 			})
 		}
 
-		workersCount := 5
+		workersCount := tasksCount
 		maxErrorsCount := 1
 
-		start := time.Now()
-		err := Run(tasks, workersCount, maxErrorsCount)
-		elapsedTime := time.Since(start)
-		require.NoError(t, err)
+		wg := new(sync.WaitGroup)
+		var err error
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err = Run(tasks, workersCount, maxErrorsCount)
+		}()
 
-		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
-		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
+		require.Eventually(t, func() bool {
+			return atomic.LoadInt32(&runTasksCount) == int32(tasksCount)
+		}, 500*time.Millisecond, 10*time.Millisecond, "tasks were run sequentially?")
+
+		close(ttSyncCh)
+		wg.Wait()
+		require.NoError(t, err)
 	})
 }
