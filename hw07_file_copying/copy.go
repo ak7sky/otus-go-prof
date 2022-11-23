@@ -2,14 +2,68 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"os"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 var (
+	ErrInvalidParam          = errors.New("offset and limit must be >= 0")
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	// Place your code here.
+	if offset < 0 || limit < 0 {
+		return ErrInvalidParam
+	}
+
+	srcF, err := os.Open(fromPath)
+	if err != nil {
+		return err
+	}
+	defer closeWithCheck(srcF)
+
+	srcFi, err := srcF.Stat()
+	if err != nil {
+		return err
+	}
+
+	if srcFi.Size() == 0 {
+		return ErrUnsupportedFile
+	}
+
+	if offset > srcFi.Size() {
+		return ErrOffsetExceedsFileSize
+	}
+
+	if _, err = srcF.Seek(offset, 0); err != nil {
+		return err
+	}
+
+	dstF, err := os.Create(toPath)
+	if err != nil {
+		return err
+	}
+	defer closeWithCheck(dstF)
+
+	if limit == 0 || limit > srcFi.Size()-offset {
+		limit = srcFi.Size() - offset
+	}
+
+	bar := pb.Full.Start64(limit)
+	defer bar.Finish()
+	if _, err = io.CopyN(dstF, bar.NewProxyReader(srcF), limit); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func closeWithCheck(f *os.File) {
+	if clErr := f.Close(); clErr != nil {
+		fmt.Printf("problem during closing %s; details: %s\n", f.Name(), clErr.Error())
+	}
 }
