@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	ErrInvalidParam          = errors.New("offset and limit must be >= 0")
+	ErrInvalidParam          = errors.New("'-offset' and '-limit' must be >= 0; '-from' and '-to' must not be empty")
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	if offset < 0 || limit < 0 {
+	if offset < 0 || limit < 0 || fromPath == "" || toPath == "" {
 		return ErrInvalidParam
 	}
 
@@ -39,7 +39,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return ErrOffsetExceedsFileSize
 	}
 
-	if _, err = srcF.Seek(offset, 0); err != nil {
+	if _, err = srcF.Seek(offset, io.SeekStart); err != nil {
 		return err
 	}
 
@@ -55,11 +55,8 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	bar := pb.Full.Start64(limit)
 	defer bar.Finish()
-	if _, err = io.CopyN(dstF, bar.NewProxyReader(srcF), limit); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = io.CopyN(dstF, bar.NewProxyReader(srcF), limit)
+	return err
 }
 
 func closeWithCheck(f *os.File) {
