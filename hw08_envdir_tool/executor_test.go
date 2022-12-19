@@ -20,13 +20,10 @@ arguments are arg1=1 arg2=2
 func TestRunCmd(t *testing.T) {
 	originalStdOut := os.Stdout
 	cmdOutFile, err := os.Create("testdata/cmdOutFile")
-	if err != nil {
-		require.Fail(t, "error creating file for cmd out")
-	}
+	require.NoError(t, err, "error creating file for cmd out")
 	defer func() {
-		if err := os.Remove("testdata/cmdOutFile"); err != nil {
-			require.Fail(t, "error removing cmd out file after test")
-		}
+		err := os.Remove("testdata/cmdOutFile")
+		require.NoError(t, err, "error removing cmd out file after test")
 	}()
 
 	os.Stdout = cmdOutFile
@@ -38,9 +35,7 @@ func TestRunCmd(t *testing.T) {
 
 	returnCode := RunCmd(cmd, expectedEnv)
 	cmdOutBytes, err := os.ReadFile("testdata/cmdOutFile")
-	if err != nil {
-		require.Fail(t, "error during read teat data")
-	}
+	require.NoError(t, err, "error during read cmd out from file")
 
 	require.Equal(t, 0, returnCode)
 	require.Equal(t, expSuccessfulOut, string(cmdOutBytes))
@@ -69,19 +64,15 @@ func TestRunCmdFailure(t *testing.T) {
 
 func setOsEnv(t *testing.T) {
 	t.Helper()
-	if err := os.Setenv("HELLO", "SHOULD_REPLACE"); err != nil {
-		require.Fail(t, "error preparing test environment")
+
+	set := func(envName, envVal string) {
+		err := os.Setenv(envName, envVal)
+		require.NoError(t, err, "error preparing test environment")
 	}
-	if err := os.Setenv("FOO", "SHOULD_REPLACE"); err != nil {
-		require.Fail(t, "error preparing test environment")
-	}
-	if err := os.Setenv("UNSET", "SHOULD_REMOVE"); err != nil {
-		require.Fail(t, "error preparing test environment")
-	}
-	if err := os.Setenv("ADDED", "from original env"); err != nil {
-		require.Fail(t, "error preparing test environment")
-	}
-	if err := os.Setenv("EMPTY", "SHOULD_BE_EMPTY"); err != nil {
-		require.Fail(t, "error preparing test environment")
-	}
+
+	set("HELLO", "SHOULD_REPLACE")
+	set("FOO", "SHOULD_REPLACE")
+	set("UNSET", "SHOULD_REMOVE")
+	set("ADDED", "from original env")
+	set("EMPTY", "SHOULD_BE_EMPTY")
 }

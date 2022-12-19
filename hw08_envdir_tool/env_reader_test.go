@@ -22,13 +22,12 @@ func TestReadDir(t *testing.T) {
 }
 
 func TestReadDirFailure(t *testing.T) {
-	if _, err := os.Create("testdata/env/FOO=BAR"); err != nil {
-		require.Fail(t, "error during creating test file")
-	}
+	_, err := os.Create("testdata/env/FOO=BAR")
+	require.NoError(t, err, "error during creating test file")
+
 	defer func() {
-		if err := os.Remove("testdata/env/FOO=BAR"); err != nil {
-			require.Fail(t, "error during removing file after test")
-		}
+		err := os.Remove("testdata/env/FOO=BAR")
+		require.NoError(t, err, "error during removing file after test")
 	}()
 
 	actualEnv, err := ReadDir("testdata/env")
