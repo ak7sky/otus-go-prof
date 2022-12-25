@@ -1,5 +1,10 @@
 [logger]
 level = "INFO"
 
-# TODO
-# ...
+[storage]
+# "memory" or "rdb"
+type = "memory"
+
+[http-server]
+host = "localhost"
+port = 8080
