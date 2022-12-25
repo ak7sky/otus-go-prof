@@ -1,0 +1,11 @@
+logger:
+  level: INFO
+  isJsonEnabled: true
+
+storage:
+  # "memory" or "rdb"
+  type: memory
+
+server:
+  host: localhost
+  httpPort: 8080
