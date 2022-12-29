@@ -17,7 +17,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "./configs/config.toml", "Path to yml configuration file")
 }
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
+	config, _ := NewConfig()
 	logg := logger.New(config.Logger.Level)
 
 	storage := memorystorage.New()

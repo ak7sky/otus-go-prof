@@ -1,0 +1,10 @@
+logger:
+  level: INFO
+
+storage:
+  # "memory" or "rdb"
+  type: memory
+
+server:
+    host: localhost
+    httpPort: 8080
