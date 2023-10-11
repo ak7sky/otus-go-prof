@@ -108,8 +108,8 @@ func TestValidateReturnsAppErr(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
 			t.Parallel()
 			err := Validate(tc.in)
 			fmt.Println(err)
@@ -221,8 +221,8 @@ func TestValidateReturnsSingleElValidationErrs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
 			t.Parallel()
 			err := Validate(tc.in)
 			fmt.Println(err)
@@ -294,8 +294,8 @@ func TestValidateReturnsMultipleValidationErrs(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			tc := tc
 			t.Parallel()
 			err := Validate(tc.in)
 			fmt.Println(err)
